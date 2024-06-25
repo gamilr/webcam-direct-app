@@ -34,7 +34,7 @@ const styles = StyleSheet.create({
   cardHeader: {
     flexDirection: 'row',
     marginBottom: 14,
-    gap: 2,
+    gap: 6,
   },
   cardFooter: {
     marginLeft: 2,
@@ -42,7 +42,7 @@ const styles = StyleSheet.create({
   name: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'flex-end',
+    justifyContent: 'space-between',
     flexWrap: 'wrap-reverse',
     flex: 1,
     gap: 8,

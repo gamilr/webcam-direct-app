@@ -90,7 +90,7 @@ const Webcam = () => {
             offset += chunkSize;
             console.log('dataLength', chunkSize);
             console.log('offset', offset);
-            //            await sleep(150);
+            await sleep(200);
           }
           return;
         }

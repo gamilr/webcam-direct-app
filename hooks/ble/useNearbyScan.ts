@@ -5,7 +5,7 @@ import KalmanFilter from 'kalmanjs';
 import { BleError, Device } from 'react-native-ble-plx';
 import { PROV_SERVICE_INFO_UUID } from '../../constants/GattUUIDs';
 
-const NEARBY_HOSTS_RSSI = -60;
+const NEARBY_HOSTS_RSSI = -52;
 const LIST_ITEM_UPDATE_INTERVAL = 1;
 const SCAN_DURATION = 30;
 
