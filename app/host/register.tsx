@@ -3,12 +3,9 @@ import { StyleSheet, View } from 'react-native';
 import { type RegisteredHost, HostConnectionType } from '../../entities/HostEntity';
 import { router, useLocalSearchParams } from 'expo-router';
 import {
-  PROV_CHAR_MOBILE_INFO_UUID,
-  PROV_CHAR_HOST_INFO_UUID,
+  CHAR_PNP_EXCHANGE_SDP_UUID,
+  CHAR_PROV_INFO_UUID,
   PROV_SERVICE_INFO_UUID,
-  RTC_SDP_CHAR_WRITE_UUID,
-  RTC_SDP_CHAR_NOTIFY_UUID,
-  WEBCAM_PNP_CHAR_WRITE_UUID,
 } from '../../constants/GattUUIDs';
 import { Device, Characteristic } from 'react-native-ble-plx';
 import Button from '../../components/ui/Button';
@@ -21,6 +18,7 @@ import HostDetailForm from '../../components/HostDetailForm';
 import useRegisteredHosts from '../../hooks/storage/useRegisteredHosts';
 import ErrorView from '../../components/ErrorView';
 import LoadingHostView from '../../components/LoadingHostView';
+import { encode as msgenc, decode as msgdec } from '@msgpack/msgpack';
 
 type RegisterHostStatusState =
   | { type: 'LOADING' | 'ERROR'; payload: string }
@@ -54,31 +52,39 @@ const RegisterHost = () => {
       if (provService) {
         const chars = await provService.characteristics();
         if (chars) {
-          provCharHostRef.current = chars.find((c) => c.uuid === PROV_CHAR_HOST_INFO_UUID);
-          provCharMobileRef.current = chars.find((c) => c.uuid === PROV_CHAR_MOBILE_INFO_UUID);
+          provCharHostRef.current = chars.find((c) => c.uuid === CHAR_PROV_INFO_UUID);
+          provCharMobileRef.current = chars.find((c) => c.uuid === CHAR_PNP_EXCHANGE_SDP_UUID);
           if (provCharHostRef.current && provCharMobileRef.current) {
             provCharHostRef.current = await provCharHostRef.current.read();
             if (provCharHostRef.current.value) {
-              const hostData = JSON.parse(decode(provCharHostRef.current.value));
-              const sdpService = (await host.services()).find((s) => s.uuid === hostData.i);
+              let decoded = decode(provCharHostRef.current.value);
+              console.log(decoded);
+              return;
+              let hostData: RegisteredHost = {
+                id: '',
+                name: '',
+                connection_type: HostConnectionType.Wlan,
+                registeredAt: 0,
+              };
+              const sdpService = (await host.services()).find((s) => s.uuid === hostData.id);
               if (sdpService) {
-                const sdpChars = await sdpService.characteristics();
+                const sdpChars = await sdpService!.characteristics();
                 if (sdpChars) {
-                  console.log('sdpChars', sdpChars);
-                  const sdpChar_write = sdpChars.find((c) => c.uuid === RTC_SDP_CHAR_WRITE_UUID);
-                  const sdpChar_notify = sdpChars.find((c) => c.uuid === RTC_SDP_CHAR_NOTIFY_UUID);
+                  const sdpChar_write = sdpChars.find((c) => c.uuid === CHAR_PNP_EXCHANGE_SDP_UUID);
+                  const sdpChar_notify = sdpChars.find(
+                    (c) => c.uuid === CHAR_PNP_EXCHANGE_SDP_UUID
+                  );
                   const webcamChar_write = sdpChars.find(
-                    (c) => c.uuid === WEBCAM_PNP_CHAR_WRITE_UUID
+                    (c) => c.uuid === CHAR_PNP_EXCHANGE_SDP_UUID
                   );
                   if (sdpChar_write && sdpChar_notify && webcamChar_write) {
-                    console.log('sdpChar_write', sdpChar_write);
                     setHostStatus({
                       type: 'HOST',
                       payload: {
-                        id: hostData.i,
-                        name: bleDeviceName,
-                        connectionType:
-                          hostData.c === 'w'
+                        id: hostData.id,
+                        name: hostData.name,
+                        connection_type:
+                          hostData.connection_type === 'WLAN'
                             ? HostConnectionType.Wlan
                             : HostConnectionType.WifiDirect,
                         registeredAt: Date.now(),
@@ -108,7 +114,7 @@ const RegisterHost = () => {
         name: mobileName || 'Mobile Device',
         cameras: [],
       };
-      await provCharMobileRef.current!.writeWithoutResponse(encode(JSON.stringify(mobileInfo)));
+      //await provCharMobileRef.current!.writeWithoutResponse(encode(JSON.stringify(mobileInfo)));
       setAddingHost(true);
       await addHost(host);
       setAddingHost(false);

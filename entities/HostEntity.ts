@@ -24,6 +24,6 @@ export enum HostConnectionType {
 export type RegisteredHost = {
   id: string;
   name: string;
-  connectionType: HostConnectionType;
+  connection_type: HostConnectionType;
   registeredAt: number;
 };
