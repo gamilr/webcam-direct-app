@@ -48,57 +48,73 @@ const RegisterHost = () => {
   const checkHost = async (host: Device) => {
     setHostStatus({ type: 'LOADING', payload: `Checking ${bleDeviceName}` });
     try {
+      // check provisioning service
       const provService = (await host.services()).find((s) => s.uuid === PROV_SERVICE_INFO_UUID);
-      if (provService) {
-        const chars = await provService.characteristics();
-        if (chars) {
-          provCharHostRef.current = chars.find((c) => c.uuid === CHAR_PROV_INFO_UUID);
-          provCharMobileRef.current = chars.find((c) => c.uuid === CHAR_PNP_EXCHANGE_SDP_UUID);
-          if (provCharHostRef.current && provCharMobileRef.current) {
-            provCharHostRef.current = await provCharHostRef.current.read();
-            if (provCharHostRef.current.value) {
-              let decoded = decode(provCharHostRef.current.value);
-              console.log(decoded);
-              return;
-              let hostData: RegisteredHost = {
-                id: '',
-                name: '',
-                connection_type: HostConnectionType.Wlan,
-                registeredAt: 0,
-              };
-              const sdpService = (await host.services()).find((s) => s.uuid === hostData.id);
-              if (sdpService) {
-                const sdpChars = await sdpService!.characteristics();
-                if (sdpChars) {
-                  const sdpChar_write = sdpChars.find((c) => c.uuid === CHAR_PNP_EXCHANGE_SDP_UUID);
-                  const sdpChar_notify = sdpChars.find(
-                    (c) => c.uuid === CHAR_PNP_EXCHANGE_SDP_UUID
-                  );
-                  const webcamChar_write = sdpChars.find(
-                    (c) => c.uuid === CHAR_PNP_EXCHANGE_SDP_UUID
-                  );
-                  if (sdpChar_write && sdpChar_notify && webcamChar_write) {
-                    setHostStatus({
-                      type: 'HOST',
-                      payload: {
-                        id: hostData.id,
-                        name: hostData.name,
-                        connection_type:
-                          hostData.connection_type === 'WLAN'
-                            ? HostConnectionType.Wlan
-                            : HostConnectionType.WifiDirect,
-                        registeredAt: Date.now(),
-                      },
-                    });
-                    return;
-                  }
-                }
-              }
-            }
-          }
-        }
+      //get the provisioning service
+      if (!provService) {
+        setHostStatus({ type: 'ERROR', payload: 'Host not supported' });
+        return;
       }
-      setHostStatus({ type: 'ERROR', payload: 'Host not supported' });
+      //get the characteristics of the provisioning service
+      const chars = await provService.characteristics();
+      if (!chars) {
+        setHostStatus({ type: 'ERROR', payload: 'Host not supported' });
+        return;
+      }
+      //get the provisioning info and pnp exchange characteristics
+      provCharHostRef.current = chars.find((c) => c.uuid === CHAR_PROV_INFO_UUID);
+      if (!provCharHostRef.current || !provCharMobileRef.current) {
+        setHostStatus({ type: 'ERROR', payload: 'Host not supported' });
+        return;
+      }
+
+      //read the host information from the provisioning info characteristic
+      provCharHostRef.current = await provCharHostRef.current.read();
+      if (!provCharHostRef.current.value) {
+        setHostStatus({ type: 'ERROR', payload: 'Host not supported' });
+        return;
+      }
+      let decoded = decode(provCharHostRef.current.value);
+      //fill up the host data
+      console.log(decoded);
+      //mock host data
+      let hostData: RegisteredHost = {
+        id: '',
+        name: '',
+        connection_type: HostConnectionType.Wlan,
+        registeredAt: 0,
+      };
+
+      //check sdp exchange
+      const sdpService = (await host.services()).find((s) => s.uuid === hostData.id);
+      if (!sdpService) {
+        setHostStatus({ type: 'ERROR', payload: 'Host not supported' });
+        return;
+      }
+      //get all chars from the sdp service (host own service)
+      const sdpChars = await sdpService!.characteristics();
+      if (!sdpChars) {
+        setHostStatus({ type: 'ERROR', payload: 'Host not supported' });
+        return;
+      }
+      const sdpChar = sdpChars.find((c) => c.uuid === CHAR_PNP_EXCHANGE_SDP_UUID);
+      if (!sdpChar_write) {
+        setHostStatus({ type: 'ERROR', payload: 'Host not supported' });
+        return;
+      }
+
+      setHostStatus({
+        type: 'HOST',
+        payload: {
+          id: hostData.id,
+          name: hostData.name,
+          connection_type:
+            hostData.connection_type === 'WLAN'
+              ? HostConnectionType.Wlan
+              : HostConnectionType.WifiDirect,
+          registeredAt: Date.now(),
+        },
+      });
     } catch (error) {
       setHostStatus({ type: 'ERROR', payload: 'Host not supported' });
     }
@@ -114,7 +130,7 @@ const RegisterHost = () => {
         name: mobileName || 'Mobile Device',
         cameras: [],
       };
-      //await provCharMobileRef.current!.writeWithoutResponse(encode(JSON.stringify(mobileInfo)));
+      await provCharMobileRef.current!.writeWithoutResponse(encode(JSON.stringify(mobileInfo)));
       setAddingHost(true);
       await addHost(host);
       setAddingHost(false);

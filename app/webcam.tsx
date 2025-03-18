@@ -13,7 +13,7 @@ import * as Haptic from 'expo-haptics';
 import useBleManager from '../hooks/ble/useBleManager';
 import { decode, encode } from 'base-64';
 import useRegisteredHosts from '../hooks/storage/useRegisteredHosts';
-import { RTC_SDP_CHAR_NOTIFY_UUID, RTC_SDP_CHAR_WRITE_UUID } from '../constants/GattUUIDs';
+import { CHAR_PNP_EXCHANGE_SDP_UUID } from '../constants/GattUUIDs';
 
 const BLE_CONN_MTU = 200;
 
@@ -81,7 +81,7 @@ const Webcam = () => {
             try {
               await host.writeCharacteristicWithResponseForService(
                 hostUUID!,
-                RTC_SDP_CHAR_WRITE_UUID,
+                CHAR_PNP_EXCHANGE_SDP_UUID,
                 chunkBase64
               );
             } catch (error) {
@@ -118,7 +118,7 @@ const Webcam = () => {
       bleManager.monitorCharacteristicForDevice(
         deviceId!,
         hostUUID!,
-        RTC_SDP_CHAR_NOTIFY_UUID,
+        CHAR_PNP_EXCHANGE_SDP_UUID,
         async (error, char) => {
           if (char && char.value) {
             console.log('newchar value', char.value);
