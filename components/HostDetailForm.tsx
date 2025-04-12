@@ -34,17 +34,11 @@ const HostDetailForm = (hostInfo: RegisteredHost) => {
       </View>
       <View>
         <Text style={styles.label}>Connection:</Text>
-        <TextInput value={hostInfo.connectionType} readOnly style={styles.inputText} />
+        <TextInput value={hostInfo.connection_type} readOnly style={styles.inputText} />
       </View>
       <View>
         <Text style={styles.label}>Id:</Text>
-        <TextInput
-          value={hostInfo.id}
-          readOnly
-          style={styles.inputText}
-          multiline={true}
-          numberOfLines={4}
-        />
+        <TextInput value={hostInfo.id} readOnly style={styles.inputText} multiline numberOfLines={4} />
       </View>
     </View>
   );

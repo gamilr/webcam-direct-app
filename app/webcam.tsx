@@ -1,7 +1,7 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Circle, CircleStop, CircleX, Square, X } from 'lucide-react-native';
+import { CircleX } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
-import { View, Text, SafeAreaView, Button, Pressable } from 'react-native';
+import { View, Text, Pressable } from 'react-native';
 import {
   RTCPeerConnection,
   mediaDevices,
@@ -23,7 +23,10 @@ function sleep(ms: number) {
 
 const Webcam = () => {
   const router = useRouter();
-  const { deviceId, hostUUID } = useLocalSearchParams<{ deviceId: string; hostUUID: string }>();
+  const { deviceId, hostUUID } = useLocalSearchParams<{
+    deviceId: string;
+    hostUUID: string;
+  }>();
   const [stream, setStream] = useState<MediaStream | null>(null);
   const bleManager = useBleManager();
 
@@ -37,12 +40,12 @@ const Webcam = () => {
 
   const start = async () => {
     try {
-      if (!(await bleManager.isDeviceConnected(deviceId!))) {
+      if (!(await bleManager.isDeviceConnected(deviceId))) {
         console.log('Device is disconnected');
         return;
       }
 
-      let hosts = await bleManager.devices([deviceId!]);
+      const hosts = await bleManager.devices([deviceId]);
       let host = hosts[0];
       host = await host.requestMTU(BLE_CONN_MTU);
       const mtu = host.mtu;
@@ -65,9 +68,9 @@ const Webcam = () => {
         // Gathering of candidates has finished.
         if (!event.candidate) {
           // Create an offer.
-          let localDescription = peerConnection.localDescription;
+          const localDescription = peerConnection.localDescription;
           console.log('localDescription', localDescription);
-          let localDescriptionStr = JSON.stringify(peerConnection.localDescription);
+          const localDescriptionStr = JSON.stringify(peerConnection.localDescription);
 
           const dataLength = localDescriptionStr.length;
           let offset = 0;
@@ -80,7 +83,7 @@ const Webcam = () => {
             console.log('chunkBase64', chunkBase64);
             try {
               await host.writeCharacteristicWithResponseForService(
-                hostUUID!,
+                hostUUID,
                 CHAR_PNP_EXCHANGE_SDP_UUID,
                 chunkBase64
               );
@@ -116,13 +119,13 @@ const Webcam = () => {
 
       let answer = '';
       bleManager.monitorCharacteristicForDevice(
-        deviceId!,
-        hostUUID!,
+        deviceId,
+        hostUUID,
         CHAR_PNP_EXCHANGE_SDP_UUID,
         async (error, char) => {
-          if (char && char.value) {
+          if (char?.value) {
             console.log('newchar value', char.value);
-            let decoded = decode(char.value!);
+            const decoded = decode(char.value);
             console.log('decoded', decoded);
 
             answer += decoded;
@@ -153,7 +156,9 @@ const Webcam = () => {
   const stop = () => {
     console.log('stop');
     if (stream) {
-      stream?.getTracks().forEach((track) => track.stop());
+      stream?.getTracks().forEach((track) => {
+        track.stop();
+      });
       stream.release();
       setStream(null);
     }
@@ -185,7 +190,9 @@ const Webcam = () => {
             <Pressable
               onLongPress={() => {
                 Haptic.impactAsync(Haptic.ImpactFeedbackStyle.Heavy);
-                stream.getTracks().forEach((track) => track.stop());
+                stream.getTracks().forEach((track) => {
+                  track.stop();
+                });
                 setStream(null);
                 router.back();
               }}

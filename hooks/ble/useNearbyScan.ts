@@ -5,7 +5,7 @@ import KalmanFilter from 'kalmanjs';
 import { BleError, Device } from 'react-native-ble-plx';
 import { PROV_SERVICE_INFO_UUID } from '../../constants/GattUUIDs';
 
-const NEARBY_HOSTS_RSSI = -52;
+const NEARBY_HOSTS_RSSI = -80;
 const LIST_ITEM_UPDATE_INTERVAL = 1;
 const SCAN_DURATION = 30;
 
@@ -36,41 +36,41 @@ const useNearbyScan = () => {
       }
 
       //Store the device in the list
-      if (device && device.name && device.rssi && device.id) {
-        let knownHostIndex = nearbyHostsRef.current.findIndex(
+      if (device?.name && device.rssi && device.id) {
+        const knownHostIndex = nearbyHostsRef.current.findIndex(
           (host) => host.device.id === device.id
         );
         //already known nearby host
         if (knownHostIndex !== -1) {
-          let knownHost = nearbyHostsRef.current[knownHostIndex];
+          const knownHost = nearbyHostsRef.current[knownHostIndex];
 
-          let deviceUUIDs = device.serviceUUIDs || [];
+          const deviceUUIDs = device.serviceUUIDs ?? [];
 
-          let filteredRssi = knownHost.kalmanFilter.filter(device.rssi);
+          const filteredRssi = knownHost.kalmanFilter.filter(device.rssi);
 
           knownHost.status =
             filteredRssi >= NEARBY_HOSTS_RSSI ? NearbyHostStatus.Close : NearbyHostStatus.Far;
 
           //Once registered, keep the status
           if (!knownHost.registeredId) {
-            let regsiteredUUID = deviceUUIDs.find((uuid) => registeredHostUUIDs.includes(uuid));
-            if (regsiteredUUID) {
-              knownHost.registeredId = regsiteredUUID;
+            const registeredUUID = deviceUUIDs.find((uuid) => registeredHostUUIDs.includes(uuid));
+            if (registeredUUID) {
+              knownHost.registeredId = registeredUUID;
             }
           }
 
           //update the known host
           nearbyHostsRef.current[knownHostIndex] = {
             ...knownHost,
-            filteredRssi: filteredRssi,
-            device: device,
+            filteredRssi,
+            device,
             lastTimeSeen: Date.now(),
           };
         } else {
           //new nearby host ignore first rssi value
-          let filter = new KalmanFilter();
+          const filter = new KalmanFilter();
           nearbyHostsRef.current.push({
-            device: device,
+            device,
             lastTimeSeen: Date.now(),
             filteredRssi: filter.filter(device.rssi),
             kalmanFilter: filter,
@@ -78,11 +78,9 @@ const useNearbyScan = () => {
           });
 
           //start the update interval when at least a device is found
-          if (updateIntervalRef.current === undefined) {
-            updateIntervalRef.current = setInterval(() => {
-              setNearbyHostsList([...nearbyHostsRef.current]);
-            }, LIST_ITEM_UPDATE_INTERVAL * 1000);
-          }
+          updateIntervalRef.current ??= setInterval(() => {
+            setNearbyHostsList([...nearbyHostsRef.current]);
+          }, LIST_ITEM_UPDATE_INTERVAL * 1000);
           console.log('Device new: ', device.id);
         }
       }

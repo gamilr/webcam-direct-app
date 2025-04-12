@@ -1,12 +1,13 @@
 import { View } from 'react-native';
-import ScreenMsg from './ui/ScreenMsg';
 import { ArrowDown, MonitorOff } from 'lucide-react-native';
+import ScreenMsg from './ui/ScreenMsg';
 import Colors from '../constants/Colors';
 
 const EmptyScanList = ({ isScanning, error }: { isScanning: boolean; error: string | null }) => {
-  let noScanningMsg = error
+  const noScanningMsg = error
     ? `Stop by this error: ${error}, Scroll down to scan again`
     : 'Scroll down to find nearby hosts';
+
   return (
     <View
       style={{
